@@ -2,6 +2,8 @@ package com.tntwars.plugin;
 
 import com.tntwars.plugin.arena.ArenaManager;
 import com.tntwars.plugin.arena.ChestManager;
+import com.tntwars.plugin.cannon.CannonSchematicRegistry;
+import com.tntwars.plugin.cannon.SchematicPreviewManager;
 import com.tntwars.plugin.commands.TntCommand;
 import com.tntwars.plugin.cosmetics.CosmeticManager;
 import com.tntwars.plugin.game.GameManager;
@@ -10,14 +12,17 @@ import com.tntwars.plugin.gui.ArenaListGUI;
 import com.tntwars.plugin.gui.CosmeticGUI;
 import com.tntwars.plugin.gui.GuiListener;
 import com.tntwars.plugin.gui.LeaderboardGUI;
+import com.tntwars.plugin.gui.SchematicGUI;
 import com.tntwars.plugin.hologram.LeaderboardHologramManager;
 import com.tntwars.plugin.listeners.ArenaProtectionListener;
+import com.tntwars.plugin.listeners.CannonTrackerListener;
 import com.tntwars.plugin.listeners.ChestRefillListener;
 import com.tntwars.plugin.listeners.PlayerCombatListener;
 import com.tntwars.plugin.listeners.PlayerConnectionListener;
 import com.tntwars.plugin.listeners.PlayerDamageListener;
 import com.tntwars.plugin.listeners.PlayerFallListener;
 import com.tntwars.plugin.listeners.WaitingItemListener;
+import com.tntwars.plugin.progression.ProgressManager;
 import com.tntwars.plugin.scoreboard.ScoreboardManager;
 import com.tntwars.plugin.stats.StatsManager;
 import com.tntwars.plugin.tournament.TournamentManager;
@@ -34,11 +39,16 @@ public class TntWarsPlugin extends JavaPlugin {
     private TournamentManager tournamentManager;
     private ScoreboardManager scoreboardManager;
     private LeaderboardHologramManager hologramManager;
+    private ProgressManager progressManager;
+    private CannonSchematicRegistry schematicRegistry;
+    private SchematicPreviewManager schematicPreviewManager;
+    private CannonTrackerListener cannonTrackerListener;
 
     private ArenaListGUI arenaListGUI;
     private ArenaConsoleGUI arenaConsoleGUI;
     private LeaderboardGUI leaderboardGUI;
     private CosmeticGUI cosmeticGUI;
+    private SchematicGUI schematicGUI;
 
     @Override
     public void onEnable() {
@@ -50,6 +60,9 @@ public class TntWarsPlugin extends JavaPlugin {
         this.statsManager = new StatsManager(this);
         this.cosmeticManager = new CosmeticManager(this);
         this.scoreboardManager = new ScoreboardManager(this);
+        this.progressManager = new ProgressManager(this);
+        this.schematicRegistry = new CannonSchematicRegistry();
+        this.schematicPreviewManager = new SchematicPreviewManager(this);
         this.gameManager = new GameManager(this);
         this.tournamentManager = new TournamentManager(this);
         this.hologramManager = new LeaderboardHologramManager(this);
@@ -58,6 +71,9 @@ public class TntWarsPlugin extends JavaPlugin {
         this.arenaConsoleGUI = new ArenaConsoleGUI(this);
         this.leaderboardGUI = new LeaderboardGUI(this);
         this.cosmeticGUI = new CosmeticGUI(this);
+        this.schematicGUI = new SchematicGUI(this);
+
+        this.cannonTrackerListener = new CannonTrackerListener(this);
 
         getServer().getPluginManager().registerEvents(new ArenaProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new ChestRefillListener(this), this);
@@ -67,6 +83,7 @@ public class TntWarsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerDamageListener(this), this);
         getServer().getPluginManager().registerEvents(new WaitingItemListener(this), this);
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
+        getServer().getPluginManager().registerEvents(cannonTrackerListener, this);
 
         TntCommand executor = new TntCommand(this);
         getCommand("tnt").setExecutor(executor);
@@ -77,9 +94,11 @@ public class TntWarsPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (schematicPreviewManager != null) schematicPreviewManager.hideAll();
         if (arenaManager != null) arenaManager.save();
         if (statsManager != null) statsManager.save();
         if (hologramManager != null) hologramManager.save();
+        if (progressManager != null) progressManager.save();
     }
 
     public ArenaManager getArenaManager() {
@@ -128,5 +147,21 @@ public class TntWarsPlugin extends JavaPlugin {
 
     public CosmeticGUI getCosmeticGUI() {
         return cosmeticGUI;
+    }
+
+    public ProgressManager getProgressManager() {
+        return progressManager;
+    }
+
+    public CannonSchematicRegistry getSchematicRegistry() {
+        return schematicRegistry;
+    }
+
+    public SchematicPreviewManager getSchematicPreviewManager() {
+        return schematicPreviewManager;
+    }
+
+    public SchematicGUI getSchematicGUI() {
+        return schematicGUI;
     }
 }

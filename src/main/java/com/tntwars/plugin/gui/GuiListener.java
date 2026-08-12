@@ -45,6 +45,9 @@ public class GuiListener implements Listener {
         } else if (title.equals(CosmeticGUI.TITLE)) {
             event.setCancelled(true);
             handleCosmeticClick(player, event);
+        } else if (title.equals(SchematicGUI.TITLE)) {
+            event.setCancelled(true);
+            handleSchematicClick(player, event);
         }
     }
 
@@ -115,5 +118,21 @@ public class GuiListener implements Listener {
         plugin.getCosmeticManager().select(player, effect);
         MessageUtil.send(player, "§aEffet de kill équipé : " + effect.getDisplayName());
         plugin.getCosmeticGUI().open(player);
+    }
+
+    private void handleSchematicClick(Player player, InventoryClickEvent event) {
+        ItemStack item = event.getCurrentItem();
+        if (item == null || !item.hasItemMeta()) return;
+        ItemMeta meta = item.getItemMeta();
+        String id = meta.getPersistentDataContainer().get(SchematicGUI.SCHEMA_KEY, PersistentDataType.STRING);
+        if (id == null) return;
+        com.tntwars.plugin.cannon.CannonSchematic schema = plugin.getSchematicRegistry().get(id);
+        if (schema == null) return;
+        if (!plugin.getProgressManager().isUnlocked(player.getUniqueId(), schema)) {
+            MessageUtil.send(player, "§cCe schéma est verrouillé (niveau " + schema.getRequiredLevel() + " requis).");
+            return;
+        }
+        player.closeInventory();
+        plugin.getSchematicPreviewManager().show(player, schema);
     }
 }

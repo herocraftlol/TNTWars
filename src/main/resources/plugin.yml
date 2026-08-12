@@ -1,9 +1,9 @@
 name: TntWars
-version: '1.1.0'
+version: '1.2.0'
 main: com.tntwars.plugin.TntWarsPlugin
 api-version: '1.21'
 author: TntWars
-description: Plugin de TNT Wars par équipes avec canons à TNT, arènes configurables, GUI, classement, cosmétiques et tournois.
+description: Plugin de TNT Wars par équipes avec canons à TNT, schémas de canons débloquables, progression par niveaux, arènes configurables, GUI, classement, cosmétiques et tournois.
 
 commands:
   tnt:

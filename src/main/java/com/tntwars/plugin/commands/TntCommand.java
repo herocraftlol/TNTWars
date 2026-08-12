@@ -51,6 +51,8 @@ public class TntCommand implements CommandExecutor, TabCompleter {
             case "cosmetics", "cosmetiques" -> {
                 if (sender instanceof Player p) plugin.getCosmeticGUI().open(p);
             }
+            case "schema", "schemas", "plans" -> handleSchema(sender, args);
+            case "level", "niveau", "progression" -> handleLevel(sender);
             case "stats" -> handleStats(sender, args);
             case "create" -> handleCreate(sender, args);
             case "delete" -> handleDelete(sender, args);
@@ -104,6 +106,30 @@ public class TntCommand implements CommandExecutor, TabCompleter {
     private void handleStats(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) return;
         player.performCommand("tnt top");
+    }
+
+    private void handleSchema(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) return;
+        if (args.length >= 2 && args[1].equalsIgnoreCase("hide")) {
+            plugin.getSchematicPreviewManager().hide(player);
+            MessageUtil.send(player, "§7Aperçu masqué.");
+            return;
+        }
+        plugin.getSchematicGUI().open(player);
+    }
+
+    private void handleLevel(CommandSender sender) {
+        if (!(sender instanceof Player player)) return;
+        var progress = plugin.getProgressManager();
+        int level = progress.getLevel(player.getUniqueId());
+        int points = progress.get(player.getUniqueId()).getPoints();
+        int toNext = progress.getPointsToNextLevel(player.getUniqueId());
+        MessageUtil.send(player, "§7Niveau §f" + level + "§7/" + progress.getMaxLevel() + " §7— §f" + points + " §7points");
+        if (toNext >= 0) {
+            MessageUtil.send(player, "§7Encore §f" + toNext + " §7points avant le niveau suivant.");
+        } else {
+            MessageUtil.send(player, "§6Niveau maximum atteint !");
+        }
     }
 
     // ── Administration : arènes ─────────────────────────────────────────
@@ -427,6 +453,8 @@ public class TntCommand implements CommandExecutor, TabCompleter {
         MessageUtil.sendRaw(sender, "§e/tnt leave §7- quitter");
         MessageUtil.sendRaw(sender, "§e/tnt top §7- classement");
         MessageUtil.sendRaw(sender, "§e/tnt cosmetics §7- effets de kill");
+        MessageUtil.sendRaw(sender, "§e/tnt schema §7- voir/débloquer les schémas de canons");
+        MessageUtil.sendRaw(sender, "§e/tnt level §7- votre progression (points/niveau)");
         MessageUtil.sendRaw(sender, "§e/tnt tournament <create|register|start|list> §7- tournois");
         if (sender.hasPermission("tntwars.admin")) {
             MessageUtil.sendRaw(sender, "§c-- Admin --");
@@ -445,7 +473,7 @@ public class TntCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        List<String> subs = new ArrayList<>(List.of("join", "leave", "list", "gui", "top", "cosmetics", "tournament", "info", "help"));
+        List<String> subs = new ArrayList<>(List.of("join", "leave", "list", "gui", "top", "cosmetics", "schema", "level", "tournament", "info", "help"));
         if (sender.hasPermission("tntwars.admin")) {
             subs.addAll(List.of("create", "delete", "setpos1", "setpos2", "setchestpos1", "setchestpos2",
                     "setzone1", "setzone2", "setspawn", "setwaiting", "setteams", "setteamsize",

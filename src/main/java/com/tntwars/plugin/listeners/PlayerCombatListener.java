@@ -40,6 +40,7 @@ public class PlayerCombatListener implements Listener {
             if (killer != null && !killer.equals(player)) {
                 plugin.getStatsManager().addKill(killer.getUniqueId());
                 plugin.getCosmeticManager().playKillEffect(killer, player.getLocation());
+                plugin.getProgressManager().awardPoints(killer, plugin.getProgressManager().configuredPoints("kill"), "élimination");
             }
         }
 

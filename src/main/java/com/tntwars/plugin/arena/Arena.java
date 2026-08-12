@@ -35,6 +35,7 @@ public class Arena {
     private final List<UUID> spectators = new ArrayList<>();
     private int countdown = -1;
     private long gameStartTime = -1;
+    private final java.util.Set<Integer> functionalCannonTeams = new java.util.HashSet<>();
 
     // Contexte tournoi (si cette partie fait partie d'un match de tournoi)
     private String tournamentName;
@@ -199,11 +200,16 @@ public class Arena {
         spectators.remove(player.getUniqueId());
     }
 
+    public java.util.Set<Integer> getFunctionalCannonTeams() {
+        return functionalCannonTeams;
+    }
+
     public void resetRuntime() {
         playerTeam.clear();
         spectators.clear();
         countdown = -1;
         gameStartTime = -1;
+        functionalCannonTeams.clear();
         for (Team t : teams) t.reset();
     }
 

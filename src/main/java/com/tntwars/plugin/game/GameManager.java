@@ -333,8 +333,11 @@ public class GameManager {
 
         if (winner != null) {
             broadcastArena(arena, "§6§l" + winner.getColoredName() + " §6§la gagné la partie !");
+            int winPoints = plugin.getProgressManager().configuredPoints("win");
             for (UUID uuid : winner.getMembers()) {
                 if (plugin.getStatsManager() != null) plugin.getStatsManager().addWin(uuid);
+                Player wp = plugin.getServer().getPlayer(uuid);
+                if (wp != null) plugin.getProgressManager().awardPoints(wp, winPoints, "victoire");
             }
             for (Team t : arena.getTeams()) {
                 if (t == winner) continue;
