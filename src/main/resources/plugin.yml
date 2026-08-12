@@ -1,0 +1,20 @@
+name: TntWars
+version: '1.1.0'
+main: com.tntwars.plugin.TntWarsPlugin
+api-version: '1.21'
+author: TntWars
+description: Plugin de TNT Wars par équipes avec canons à TNT, arènes configurables, GUI, classement, cosmétiques et tournois.
+
+commands:
+  tnt:
+    description: Commande principale du plugin TntWars
+    usage: /tnt
+    aliases: [tntwars, tw]
+
+permissions:
+  tntwars.admin:
+    description: Accès aux commandes d'administration (création d'arène, force start, console...)
+    default: op
+  tntwars.play:
+    description: Autorise à rejoindre une arène
+    default: true

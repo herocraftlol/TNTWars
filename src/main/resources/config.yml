@@ -1,0 +1,23 @@
+# Configuration générale de TntWars
+
+game:
+  countdown-seconds: 30
+  min-players-to-start: 2
+  restarting-seconds: 8
+  default-teams: 2
+  default-team-size: 4
+  friendly-fire: false
+  spectator-fall-y-offset: 0
+
+waiting-room:
+  diamond-slot: 0
+  color-item-slot: 4
+  leave-item-slot: 8
+
+messages:
+  prefix: "&8[&cTNT&fWars&8] &r"
+
+storage:
+  stats-file: "stats.yml"
+  arenas-file: "arenas.yml"
+  tournaments-file: "tournaments.yml"
