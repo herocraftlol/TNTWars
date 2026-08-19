@@ -29,6 +29,7 @@ import java.util.UUID;
 public class GameManager {
 
     public static final NamespacedKey ACTION_KEY = new NamespacedKey("tntwars", "action");
+    public static final NamespacedKey LOCKED_ITEM_KEY = new NamespacedKey("tntwars", "locked_item");
 
     private final TntWarsPlugin plugin;
 
@@ -38,6 +39,7 @@ public class GameManager {
     public GameManager(TntWarsPlugin plugin) {
         this.plugin = plugin;
         startTickTask();
+        startDropCleanupTask();
     }
 
     public Arena getArenaOf(Player player) {
@@ -158,7 +160,7 @@ public class GameManager {
             player.setExp(backup.getExp());
             player.setLevel(backup.getLevel());
             try {
-                player.setHealth(Math.min(backup.getHealth(), player.getAttribute(org.bukkit.attribute.Attribute.GENERIC_MAX_HEALTH).getValue()));
+                player.setHealth(Math.min(backup.getHealth(), player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue()));
             } catch (Exception ignored) {
             }
             player.setFoodLevel(backup.getFoodLevel());
@@ -246,8 +248,32 @@ public class GameManager {
         }.runTaskTimer(plugin, 20L, 20L);
     }
 
-    private void tickArena(Arena arena) {
-        if (arena.getState() == ArenaState.STARTING) {
+    /** Nettoie automatiquement tous les items droppés (TNT non consommée, blocs cassés...) dans les arènes actives. */
+    private void startDropCleanupTask() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Arena arena : plugin.getArenaManager().getArenas()) {
+                    if (arena.getMapRegion() == null) continue;
+                    if (arena.getState() != ArenaState.INGAME && arena.getState() != ArenaState.STARTING) continue;
+                    org.bukkit.World world = arena.getMapRegion().getWorld();
+                    if (world == null) continue;
+                    for (org.bukkit.entity.Entity entity : world.getEntitiesByClass(org.bukkit.entity.Item.class)) {
+                        if (arena.getMapRegion().contains(entity.getLocation())) {
+                            entity.remove();
+                        }
+                    }
+                    for (org.bukkit.entity.Entity entity : world.getEntitiesByClass(org.bukkit.entity.ExperienceOrb.class)) {
+                        if (arena.getMapRegion().contains(entity.getLocation())) {
+                            entity.remove();
+                        }
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 100L, 100L); // toutes les 5 secondes
+    }
+
+    private void tickArena(Arena arena) {        if (arena.getState() == ArenaState.STARTING) {
             int c = arena.getCountdown();
             if (c <= 0) {
                 startGame(arena);
@@ -283,12 +309,27 @@ public class GameManager {
                 p.setFoodLevel(20);
                 p.teleport(team.getSpawn());
                 dyeArmor(p, team);
+                p.getInventory().setItem(0, createLockedPickaxe());
                 MessageUtil.send(p, "§aLa partie commence ! Vous êtes dans l'équipe " + team.getColoredName() + ". Construisez votre canon à TNT avec le contenu du coffre !");
             }
         }
         if (plugin.getScoreboardManager() != null) {
             plugin.getScoreboardManager().startArenaScoreboard(arena);
         }
+    }
+
+    /** Pioche en netherite incassable, verrouillée dans le slot 0 : ne peut ni se déplacer, ni se dropper, ni changer de slot. */
+    public ItemStack createLockedPickaxe() {
+        ItemStack item = new ItemStack(Material.NETHERITE_PICKAXE);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(MessageUtil.color("§b§lPioche du bâtisseur"));
+        meta.setLore(List.of(MessageUtil.color("§7Toujours dans votre slot 1, incassable."),
+                MessageUtil.color("§7Sert à miner rapidement dans votre zone.")));
+        meta.setUnbreakable(true);
+        meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_UNBREAKABLE, org.bukkit.inventory.ItemFlag.HIDE_ATTRIBUTES);
+        meta.getPersistentDataContainer().set(LOCKED_ITEM_KEY, PersistentDataType.STRING, "locked_pickaxe");
+        item.setItemMeta(meta);
+        return item;
     }
 
     private void dyeArmor(Player player, Team team) {

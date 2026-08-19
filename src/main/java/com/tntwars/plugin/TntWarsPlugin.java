@@ -17,6 +17,7 @@ import com.tntwars.plugin.hologram.LeaderboardHologramManager;
 import com.tntwars.plugin.listeners.ArenaProtectionListener;
 import com.tntwars.plugin.listeners.CannonTrackerListener;
 import com.tntwars.plugin.listeners.ChestRefillListener;
+import com.tntwars.plugin.listeners.LockedItemListener;
 import com.tntwars.plugin.listeners.PlayerCombatListener;
 import com.tntwars.plugin.listeners.PlayerConnectionListener;
 import com.tntwars.plugin.listeners.PlayerDamageListener;
@@ -82,6 +83,7 @@ public class TntWarsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerDamageListener(this), this);
         getServer().getPluginManager().registerEvents(new WaitingItemListener(this), this);
+        getServer().getPluginManager().registerEvents(new LockedItemListener(this), this);
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
         getServer().getPluginManager().registerEvents(cannonTrackerListener, this);
 

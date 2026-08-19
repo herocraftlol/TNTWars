@@ -6,7 +6,7 @@
 
 Arènes par équipes · Canons à TNT · Schémas débloquables · Progression par niveaux · Coffres infinis · GUI · Classement · Cosmétiques · Tournois
 
-`version 1.2.0` · `API 1.21` · `Java 21`
+`version 1.3.0` · `API 1.21` · `Java 21`
 
 </div>
 
@@ -71,6 +71,7 @@ plus simple au plus avancé. Chaque schéma se **débloque en montant de niveau*
 | 🟡 Canon à eau (tube) | 4 | TNT poussée par un courant d'eau dans un tube de verre : précis, sans perte. |
 | 🔴 Canon semi-automatique (comparateur) | 5 | Trémie + coffre d'alimentation + comparateur pour un tir soutenu. |
 | 🔴 Canon double synchronisé | 6 | Deux distributeurs reliés par une seule ligne de redstone. |
+| 🔴 Canon à TNT puissant | 7 | Double batterie convergente (7 distributeurs) + canal d'eau pour un tir séquentiel dévastateur. |
 
 Chaque schéma est livré avec un **livre de plans** (written book) expliquant l'agencement
 des blocs et l'ordre de construction.
@@ -89,6 +90,27 @@ nouveaux schémas de canons.
 > Les **TNT sont attribuées à l'équipe** qui les a amorcées dans sa zone, et les points
 > sont distribués à toute l'équipe en ligne (action collective). Un **canon
 > fonctionnel** est salué dans l'arène lors de la première touche adverse.
+
+## 🆕 Nouveautés de la v1.3.0
+
+- 🧨 **Nouveau schéma de canon débloquable au niveau 7 : le Canon à TNT puissant** —
+  une double batterie convergente de 7 distributeurs. Deux batteries de 3 distributeurs
+  se font face et tirent l'une vers l'autre dans un canal d'eau bordé d'échelles ; un
+  7ᵉ distributeur perpendiculaire redirige ensuite les TNT avec un élan supplémentaire.
+  Deux leviers permettent de déclencher séparément l'accumulation puis le tir final,
+  pour un tir séquentiel plus puissant et plus précis qu'un simple canon à eau.
+- 👷 **Aperçu des schémas revisité** : la prévisualisation en blocs fantômes se
+  construit désormais **progressivement, bloc par bloc** (~1 bloc toutes les 1/3 de
+  seconde), pour bien montrer l'ordre de construction, et s'oriente automatiquement
+  vers le cap cardinal le plus proche du regard du joueur.
+- ⛏️ **Pioche du bâtisseur** : chaque joueur reçoit en partie une pioche en netherite
+  **incassable, verrouillée dans le slot 1** — impossible à déplacer, jeter ou perdre.
+  Idéale pour miner rapidement dans sa zone de construction.
+- 🧹 **Nettoyage automatique des arènes** : les items au sol (TNT non consommée, blocs
+  cassés…) et les orbes d'expérience sont supprimés automatiquement toutes les 5
+  secondes dans les arènes en partie, pour garder des performances optimales.
+- 🔧 **Compatibilité** : l'API Paper utilisée pour la compilation passe en **1.21.8**
+  (le plugin reste compatible avec tous les serveurs Paper 1.21+).
 
 ---
 
