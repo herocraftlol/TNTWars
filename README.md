@@ -6,7 +6,7 @@
 
 Arènes par équipes · Canons à TNT · Schémas **constructibles en jeu** · Progression par niveaux · Coffres infinis · GUI · Classement · Cosmétiques · Tournois
 
-`version 1.4.0` · `API 1.21` · `Java 21`
+`version 1.5.0` · `API 1.21` · `Java 21`
 
 </div>
 
@@ -31,30 +31,19 @@ complète de la map en fin de partie et élimination par chute.
 
 ---
 
-## 🆕 Nouveautés de la v1.4.0
+## 🆕 Nouveautés de la v1.5.0
 
-- 🔨 **Les schémas de canons se construisent désormais RÉELLEMENT en jeu** : cliquer sur
-  un schéma débloqué dans `/tnt schema` **construit le canon bloc par bloc** (~1 bloc
-  toutes les 1/3 de seconde) devant le joueur, dans sa propre zone d'équipe, pendant une
-  partie en cours. Les distributeurs posés sont même **automatiquement remplis de TNT**,
-  prêts à tirer ! La construction est refusée si le schéma ne tient pas entièrement dans
-  la zone du joueur (mêmes règles que la construction manuelle), et `/tnt schema cancel`
-  (ou `hide`) permet d'arrêter une construction en cours — les blocs déjà posés restent.
-- 🏁 **Fin de partie grand spectacle** : tous les joueurs, y compris les survivants,
-  passent **spectateurs**, un titre **VICTOIRE**, **DÉFAITE** ou **Match nul** s'affiche
-  pour chaque équipe, et tout le monde reste sur place le temps d'admirer le résultat.
-  Après un délai configurable (`game.post-game-seconds`, 5 secondes par défaut), chacun
-  est **automatiquement renvoyé au lobby** — plus besoin de taper `/tnt leave`.
-- 🧭 **Spectateurs confinés dans la map** : pendant la régénération, les spectateurs ne
-  peuvent plus s'échapper des limites de la map en volant (le regard reste libre, seul le
-  déplacement hors zone est bloqué).
-- 🛠️ **Nouvel outil admin `/tnt debug <arène> [fix]`** : diagnostic complet d'une arène
-  (état, configuration, snapshot, zones, coffres, joueurs…) et **déblocage instantané**
-  d'une arène coincée en régénération. Un bouton dédié est aussi disponible dans
-  `/tnt console`, et un **filet de sécurité automatique** débloque de lui-même toute
-  arène restée bloquée anormalement longtemps.
-- 🧰 **Compilation & version** : passage à `1.4.0` (`pom.xml` / `plugin.yml`), correction de
-  l'import `TNTPrimeEvent` selon la version de Paper.
+- 🛡️ **Commandes à l'épreuve des erreurs** : toutes les sous-commandes `/tnt` passent
+  désormais par un **filet de sécurité global**. Si une erreur interne survient pendant
+  l'exécution d'une commande, elle est **interceptée proprement** au lieu de planter :
+  le joueur reçoit un message clair (« Une erreur interne est survenue… ») avec le
+  détail de l'exception, et la **trace complète est enregistrée dans la console du
+  serveur** pour faciliter le diagnostic.
+- 🔎 **Logs de diagnostic enrichis** : chaque erreur de commande indique désormais
+  **quelle commande a échoué et qui l'a lancée**, ce qui accélère grandement la
+  résolution des problèmes sur les serveurs en production.
+- 🧰 **Compilation & version** : passage à `1.5.0` (`pom.xml` / `plugin.yml`),
+  correction de l'import `TNTPrimeEvent` selon la version de Paper.
 
 ---
 
@@ -234,6 +223,15 @@ levels:
 ---
 
 ## 📋 Changelog
+
+### v1.5.0
+
+- 🛡️ **Gestion globale des erreurs de commandes** : toutes les sous-commandes `/tnt`
+  sont entourées d'un try/catch — une erreur interne n'interrompt plus la commande en
+  silence, le joueur reçoit un message explicite avec le détail de l'exception, et la
+  trace complète (commande + expéditeur) est loguée en console (`TntCommand`).
+- 🧰 Passage en `1.5.0`, correction de l'import `TNTPrimeEvent` pour compatibilité Paper.
+
 
 ### v1.4.0
 

@@ -28,13 +28,26 @@ public class TntCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        try {
+            dispatch(sender, args);
+        } catch (Exception ex) {
+            plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                    "Erreur en exécutant /tnt " + String.join(" ", args) + " (sender=" + sender.getName() + ")", ex);
+            MessageUtil.send(sender, "§cUne erreur interne est survenue en exécutant cette commande.");
+            MessageUtil.send(sender, "§cDétail (voir aussi la console) : §7" + ex.getClass().getSimpleName()
+                    + (ex.getMessage() != null ? " - " + ex.getMessage() : ""));
+        }
+        return true;
+    }
+
+    private void dispatch(CommandSender sender, String[] args) {
         if (args.length == 0) {
             if (sender instanceof Player player) {
                 plugin.getArenaListGUI().open(player);
             } else {
                 sendHelp(sender);
             }
-            return true;
+            return;
         }
 
         String sub = args[0].toLowerCase();
@@ -76,7 +89,6 @@ public class TntCommand implements CommandExecutor, TabCompleter {
             case "help" -> sendHelp(sender);
             default -> sendHelp(sender);
         }
-        return true;
     }
 
     // ── Joueur ────────────────────────────────────────────────────────────

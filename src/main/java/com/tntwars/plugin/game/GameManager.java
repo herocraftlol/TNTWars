@@ -122,18 +122,38 @@ public class GameManager {
             return false;
         }
         boolean wasIngame = arena.getState() == ArenaState.INGAME;
-        arena.removePlayer(player);
-        restorePlayer(player);
 
-        if (wasIngame) {
-            checkWinCondition(arena);
-        } else if (arena.getState() == ArenaState.STARTING && arena.totalPlayers() < plugin.getConfig().getInt("game.min-players-to-start", 2)) {
-            arena.setState(ArenaState.WAITING);
-            arena.setCountdown(-1);
+        try {
+            arena.removePlayer(player);
+        } catch (Exception ex) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING,
+                    "Erreur en retirant " + player.getName() + " de l'arène " + arena.getName(), ex);
         }
-        if (arena.getState() == ArenaState.WAITING || arena.getState() == ArenaState.STARTING) {
-            broadcastArena(arena, "§e" + player.getName() + " §7a quitté l'arène.");
+
+        try {
+            restorePlayer(player);
+        } catch (Exception ex) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING,
+                    "Erreur en restaurant " + player.getName() + " après /tnt leave sur " + arena.getName(), ex);
+            MessageUtil.send(player, "§eVotre inventaire/position n'a peut-être pas pu être restauré correctement (voir la console).");
         }
+
+        try {
+            if (wasIngame) {
+                checkWinCondition(arena);
+            } else if (arena.getState() == ArenaState.STARTING && arena.totalPlayers() < plugin.getConfig().getInt("game.min-players-to-start", 2)) {
+                arena.setState(ArenaState.WAITING);
+                arena.setCountdown(-1);
+            }
+            if (arena.getState() == ArenaState.WAITING || arena.getState() == ArenaState.STARTING) {
+                broadcastArena(arena, "§e" + player.getName() + " §7a quitté l'arène.");
+            }
+        } catch (Exception ex) {
+            plugin.getLogger().log(java.util.logging.Level.WARNING,
+                    "Erreur post-leave sur l'arène " + arena.getName(), ex);
+        }
+
+        MessageUtil.send(player, "§aVous avez quitté l'arène.");
         return true;
     }
 
@@ -146,29 +166,75 @@ public class GameManager {
                 player.getHealth(), player.getFoodLevel());
     }
 
+    /**
+     * Restaure un joueur à son état d'avant /tnt join. Chaque étape est isolée dans son
+     * propre try/catch : si l'une d'elles échoue (ex. attribut de santé indisponible,
+     * monde d'origine déchargé), les autres s'appliquent quand même plutôt que de faire
+     * planter toute la commande /tnt leave.
+     */
     private void restorePlayer(Player player) {
         PlayerBackup backup = backups.remove(player.getUniqueId());
-        player.getInventory().clear();
-        player.setGameMode(GameMode.SURVIVAL);
-        if (player.isDead()) {
-            // sera géré au respawn
+
+        try {
+            player.closeInventory();
+        } catch (Exception ignored) {
         }
+        try {
+            player.getInventory().clear();
+        } catch (Exception ignored) {
+        }
+        try {
+            player.setGameMode(GameMode.SURVIVAL);
+        } catch (Exception ignored) {
+        }
+
         if (backup != null) {
-            player.getInventory().setContents(backup.getInventory());
-            player.getInventory().setArmorContents(backup.getArmor());
-            player.setGameMode(backup.getGameMode());
-            player.setExp(backup.getExp());
-            player.setLevel(backup.getLevel());
             try {
-                player.setHealth(Math.min(backup.getHealth(), player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue()));
+                player.getInventory().setContents(backup.getInventory());
             } catch (Exception ignored) {
             }
-            player.setFoodLevel(backup.getFoodLevel());
-            if (backup.getLocation().getWorld() != null) {
-                player.teleport(backup.getLocation());
+            try {
+                player.getInventory().setArmorContents(backup.getArmor());
+            } catch (Exception ignored) {
+            }
+            try {
+                player.setGameMode(backup.getGameMode());
+            } catch (Exception ignored) {
+            }
+            try {
+                player.setExp(Math.max(0f, Math.min(1f, backup.getExp())));
+            } catch (Exception ignored) {
+            }
+            try {
+                player.setLevel(Math.max(0, backup.getLevel()));
+            } catch (Exception ignored) {
+            }
+            try {
+                double max = 20.0;
+                try {
+                    max = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
+                } catch (Exception ignoredAttr) {
+                    // attribut indisponible : on garde 20 par défaut
+                }
+                double health = Math.max(1.0, Math.min(backup.getHealth(), max));
+                player.setHealth(health);
+            } catch (Exception ignored) {
+            }
+            try {
+                player.setFoodLevel(Math.max(0, Math.min(20, backup.getFoodLevel())));
+            } catch (Exception ignored) {
+            }
+            try {
+                if (backup.getLocation() != null && backup.getLocation().getWorld() != null) {
+                    player.teleport(backup.getLocation());
+                }
+            } catch (Exception ignored) {
             }
         } else {
-            player.setHealth(20);
+            try {
+                player.setHealth(20);
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -436,14 +502,18 @@ public class GameManager {
                 java.util.Set<UUID> remaining = new java.util.LinkedHashSet<>(arena.getPlayerTeamMap().keySet());
                 remaining.addAll(arena.getSpectators());
                 for (UUID uuid : remaining) {
-                    Player p = plugin.getServer().getPlayer(uuid);
-                    if (p != null) {
-                        leave(p);
-                        MessageUtil.send(p, "§aVous êtes de retour au lobby.");
-                    } else {
-                        arena.getPlayerTeamMap().remove(uuid);
-                        arena.getSpectators().remove(uuid);
-                        currentArena.remove(uuid);
+                    try {
+                        Player p = plugin.getServer().getPlayer(uuid);
+                        if (p != null) {
+                            leave(p);
+                        } else {
+                            arena.getPlayerTeamMap().remove(uuid);
+                            arena.getSpectators().remove(uuid);
+                            currentArena.remove(uuid);
+                        }
+                    } catch (Exception ex) {
+                        plugin.getLogger().log(java.util.logging.Level.WARNING,
+                                "Erreur en renvoyant automatiquement un joueur au lobby (arène " + arena.getName() + ")", ex);
                     }
                 }
                 arena.resetRuntime();
