@@ -4,9 +4,9 @@
 
 ### Plugin de mini-jeu **TNT Wars** pour Minecraft Paper 1.21
 
-Arènes par équipes · Canons à TNT · Schémas débloquables · Progression par niveaux · Coffres infinis · GUI · Classement · Cosmétiques · Tournois
+Arènes par équipes · Canons à TNT · Schémas **constructibles en jeu** · Progression par niveaux · Coffres infinis · GUI · Classement · Cosmétiques · Tournois
 
-`version 1.3.0` · `API 1.21` · `Java 21`
+`version 1.4.0` · `API 1.21` · `Java 21`
 
 </div>
 
@@ -15,9 +15,9 @@ Arènes par équipes · Canons à TNT · Schémas débloquables · Progression p
 ## 🎯 Qu'est-ce que TntWars ?
 
 **TntWars** est un plugin de mini-jeu qui met aux prises plusieurs équipes dans une arène
-où l'objectif est de détruire la map adverse à l'aide de **canons à TNT**. Chaque équipe
-dispose de sa propre zone de construction et d'un **coffre infini** rempli de tout le
-matériel nécessaire (TNT, redstone, dispensers, slime blocks, seaux d'eau…). Le sol se
+où l'objectif est de **faire sauter la map adverse** à l'aide de **canons à TNT**. Chaque
+équipe dispose de sa propre zone de construction et d'un **coffre infini** rempli de tout
+le matériel nécessaire (TNT, redstone, dispensers, slime blocks, seaux d'eau…). Le sol se
 fait exploser petit à petit, et **tomber dans le vide** équivaut à une élimination. La
 dernière équipe encore debout l'emporte.
 
@@ -27,7 +27,34 @@ Wars : coffres qui se régénèrent, zones de construction isolées par équipe,
 complète de la map en fin de partie et élimination par chute.
 
 > 💡 Idéal pour les serveurs cherchant un mini-jeu explosif, compétitif et facile à
-> configurer en jeu, sans dépendance externe autre que Paper.
+> configurer entièrement en jeu, sans dépendance externe autre que Paper.
+
+---
+
+## 🆕 Nouveautés de la v1.4.0
+
+- 🔨 **Les schémas de canons se construisent désormais RÉELLEMENT en jeu** : cliquer sur
+  un schéma débloqué dans `/tnt schema` **construit le canon bloc par bloc** (~1 bloc
+  toutes les 1/3 de seconde) devant le joueur, dans sa propre zone d'équipe, pendant une
+  partie en cours. Les distributeurs posés sont même **automatiquement remplis de TNT**,
+  prêts à tirer ! La construction est refusée si le schéma ne tient pas entièrement dans
+  la zone du joueur (mêmes règles que la construction manuelle), et `/tnt schema cancel`
+  (ou `hide`) permet d'arrêter une construction en cours — les blocs déjà posés restent.
+- 🏁 **Fin de partie grand spectacle** : tous les joueurs, y compris les survivants,
+  passent **spectateurs**, un titre **VICTOIRE**, **DÉFAITE** ou **Match nul** s'affiche
+  pour chaque équipe, et tout le monde reste sur place le temps d'admirer le résultat.
+  Après un délai configurable (`game.post-game-seconds`, 5 secondes par défaut), chacun
+  est **automatiquement renvoyé au lobby** — plus besoin de taper `/tnt leave`.
+- 🧭 **Spectateurs confinés dans la map** : pendant la régénération, les spectateurs ne
+  peuvent plus s'échapper des limites de la map en volant (le regard reste libre, seul le
+  déplacement hors zone est bloqué).
+- 🛠️ **Nouvel outil admin `/tnt debug <arène> [fix]`** : diagnostic complet d'une arène
+  (état, configuration, snapshot, zones, coffres, joueurs…) et **déblocage instantané**
+  d'une arène coincée en régénération. Un bouton dédié est aussi disponible dans
+  `/tnt console`, et un **filet de sécurité automatique** débloque de lui-même toute
+  arène restée bloquée anormalement longtemps.
+- 🧰 **Compilation & version** : passage à `1.4.0` (`pom.xml` / `plugin.yml`), correction de
+  l'import `TNTPrimeEvent` selon la version de Paper.
 
 ---
 
@@ -44,7 +71,7 @@ complète de la map en fin de partie et élimination par chute.
 - **Régénération automatique de la map** : toute la map est sauvegardée au lancement de
   la partie et restaurée bloc par bloc (étalée sur plusieurs ticks) à la fin.
 - **Élimination par chute** : un joueur tombant sous la limite basse de la map (sol
-  détruit) est éliminé et passe spectateur ; il peut toujours faire `/tnt leave`.
+  détruit) est éliminé et passe spectateur.
 - **Salle d'attente** façon HikaBrain avec 3 items :
   - 💎 **Diamant** (slot 0) : lance la partie, visible uniquement par les admins.
   - 🟥/🟩 **Béton coloré** : change d'équipe en cliquant (cycle rouge → vert → …).
@@ -56,12 +83,16 @@ complète de la map en fin de partie et élimination par chute.
 - **Cosmétiques** : effets visuels/sonores de kill sélectionnables via GUI.
 - **Tournois** : inscription par équipes, génération automatique d'un tableau à
   élimination directe, matchs enchaînés automatiquement sur une arène dédiée.
+- **Pioche du bâtisseur** : chaque joueur reçoit en partie une pioche en netherite
+  **incassable, verrouillée dans le slot 1** — impossible à déplacer, jeter ou perdre.
+- **Nettoyage automatique des arènes** : les items au sol et les orbes d'expérience sont
+  supprimés toutes les 5 secondes en partie, pour des performances optimales.
 
-### 🧨 Schémas de canons à TNT débloquables *(nouveau v1.2.0)*
+### 🧨 Schémas de canons à TNT débloquables
 
 Le plugin embarque une **bibliothèque de schémas de canons à TNT** prêts à l'emploi, du
-plus simple au plus avancé. Chaque schéma se **débloque en montant de niveau** et peut
-être **visualisé en jeu** sous forme de blocs fantômes :
+plus simple au plus avancé. Chaque schéma se **débloque en montant de niveau**, et peut
+être **construit pour de vrai en jeu directement depuis le GUI** (depuis la v1.4.0) :
 
 | Schéma | Niveau | Description |
 |---|---|---|
@@ -76,7 +107,7 @@ plus simple au plus avancé. Chaque schéma se **débloque en montant de niveau*
 Chaque schéma est livré avec un **livre de plans** (written book) expliquant l'agencement
 des blocs et l'ordre de construction.
 
-### 📈 Progression par niveaux *(nouveau v1.2.0)*
+### 📈 Progression par niveaux
 
 Chaque action en jeu rapporte des **points** configurables (`config.yml`, section
 `points`) ; atteindre un palier de points fait monter d'un **niveau** et débloque de
@@ -91,33 +122,12 @@ nouveaux schémas de canons.
 > sont distribués à toute l'équipe en ligne (action collective). Un **canon
 > fonctionnel** est salué dans l'arène lors de la première touche adverse.
 
-## 🆕 Nouveautés de la v1.3.0
-
-- 🧨 **Nouveau schéma de canon débloquable au niveau 7 : le Canon à TNT puissant** —
-  une double batterie convergente de 7 distributeurs. Deux batteries de 3 distributeurs
-  se font face et tirent l'une vers l'autre dans un canal d'eau bordé d'échelles ; un
-  7ᵉ distributeur perpendiculaire redirige ensuite les TNT avec un élan supplémentaire.
-  Deux leviers permettent de déclencher séparément l'accumulation puis le tir final,
-  pour un tir séquentiel plus puissant et plus précis qu'un simple canon à eau.
-- 👷 **Aperçu des schémas revisité** : la prévisualisation en blocs fantômes se
-  construit désormais **progressivement, bloc par bloc** (~1 bloc toutes les 1/3 de
-  seconde), pour bien montrer l'ordre de construction, et s'oriente automatiquement
-  vers le cap cardinal le plus proche du regard du joueur.
-- ⛏️ **Pioche du bâtisseur** : chaque joueur reçoit en partie une pioche en netherite
-  **incassable, verrouillée dans le slot 1** — impossible à déplacer, jeter ou perdre.
-  Idéale pour miner rapidement dans sa zone de construction.
-- 🧹 **Nettoyage automatique des arènes** : les items au sol (TNT non consommée, blocs
-  cassés…) et les orbes d'expérience sont supprimés automatiquement toutes les 5
-  secondes dans les arènes en partie, pour garder des performances optimales.
-- 🔧 **Compatibilité** : l'API Paper utilisée pour la compilation passe en **1.21.8**
-  (le plugin reste compatible avec tous les serveurs Paper 1.21+).
-
 ---
 
 ## 📦 Installation
 
 1. Téléchargez le fichier **`TntWars.jar`** depuis la [page des releases](../../releases).
-2. Placez-le dans le dossier `plugins/` de votre serveur **Paper 1.21** (ou Spigot 1.21).
+2. Placez-le dans le dossier `plugins/` de votre serveur **Paper 1.21**.
 3. Redémarrez (ou rechargez) le serveur.
 4. Configurez vos arènes en jeu (voir la section ci-dessous).
 
@@ -143,8 +153,8 @@ internet (pour télécharger `paper-api` depuis le dépôt Maven de PaperMC).
 | `/tnt leave` | Quitte l'arène en cours |
 | `/tnt top` | Classement |
 | `/tnt cosmetics` | Choisir son effet de kill |
-| `/tnt schema` | Ouvre le menu des schémas de canons (aperçu en blocs fantômes) |
-| `/tnt schema hide` | Masque l'aperçu du schéma affiché |
+| `/tnt schema` | Menu des schémas de canons — cliquez pour **construire réellement** le canon en jeu |
+| `/tnt schema cancel` | Arrête une construction de schéma en cours (les blocs déjà posés restent) |
 | `/tnt level` | Affiche votre progression (points / niveau) |
 | `/tnt tournament create\|register\|start\|list` | Gestion des tournois |
 
@@ -162,6 +172,7 @@ internet (pour télécharger `paper-api` depuis le dépôt Maven de PaperMC).
 | `/tnt setteams <nom> <n>` | Nombre d'équipes |
 | `/tnt setteamsize <nom> <n>` | Joueurs par équipe |
 | `/tnt console <nom>` | Ouvre la console d'administration de l'arène |
+| `/tnt debug <nom> [fix]` | Diagnostic d'une arène / déblocage si elle est coincée |
 | `/tnt forcestart <nom>` / `/tnt stop <nom>` | Force le lancement / arrête la partie |
 | `/tnt hologram create\|remove <id>` | Hologramme de classement |
 
@@ -183,6 +194,29 @@ internet (pour télécharger `paper-api` depuis le dépôt Maven de PaperMC).
 Dès que tout est configuré, l'arène passe automatiquement en état `WAITING` et devient
 rejoignable.
 
+## ⚙️ Configuration (`config.yml`)
+
+```yaml
+game:
+  countdown-seconds: 30        # décompte avant le départ
+  min-players-to-start: 2
+  restarting-seconds: 8        # temps avant la régénération de la map
+  post-game-seconds: 5         # temps d'écran de fin avant le retour au lobby (v1.4.0)
+  default-teams: 2
+  default-team-size: 4
+  friendly-fire: false
+
+points:
+  kill: 15
+  win: 50
+  tnt-launched: 1
+  enemy-block-destroyed: 2
+  cannon-functional-bonus: 25
+
+levels:
+  thresholds: [0, 50, 150, 300, 600, 1000, 1500, 2200, 3000]
+```
+
 ## 🛠️ Notes techniques
 
 - Compatible **Paper 1.21**, Java 21.
@@ -192,40 +226,60 @@ rejoignable.
 - Pour un respawn instantané des joueurs éliminés (sans écran de mort), le plugin force
   `player.spigot().respawn()` — vous pouvez aussi activer le gamerule
   `doImmediateRespawn` sur le monde de vos arènes.
+- Si `TNTPrimeEvent` ne compile pas avec votre version exacte de paper-api, remplacez
+  l'import `com.destroystokyo.paper.event.block.TNTPrimeEvent` par
+  `io.papermc.paper.event.block.TNTPrimeEvent` dans `CannonTrackerListener.java` — les
+  deux variantes existent selon les versions de Paper, l'une étant un alias de l'autre.
 
 ---
 
 ## 📋 Changelog
 
+### v1.4.0
+
+- 🔨 **Construction réelle des schémas de canons** : clic sur un schéma débloqué =
+  construction bloc par bloc (~1 bloc / ⅓ s) dans sa zone d'équipe en pleine partie,
+  distributeurs auto-remplis de TNT, refus si le schéma dépasse de la zone.
+  Remplace l'ancien aperçu en blocs fantômes. `/tnt schema cancel` (ou `hide`) pour
+  arrêter.
+- 🏁 **Fin de partie repensée** : tous les joueurs passent spectateurs en fin de partie,
+  titres VICTOIRE / DÉFAITE / Match nul personnalisés, puis retour automatique au lobby
+  après un délai configurable (`game.post-game-seconds`).
+- 🧭 **Spectateurs confinés** (`SpectatorContainmentListener`) : impossible de quitter
+  les limites de la map en volant pendant la régénération.
+- 🛠️ **`/tnt debug <arène> [fix]`** : diagnostic complet + déblocage manuel d'une arène
+  coincée ; bouton dédié dans `/tnt console` ; filet de sécurité automatique en cas
+  de blocage prolongé.
+- 🧰 Passage en `1.4.0`, correction de l'import `TNTPrimeEvent` pour compatibilité Paper.
+
+### v1.3.0
+
+- 🧨 **Nouveau schéma de canon débloquable au niveau 7 : le Canon à TNT puissant** —
+  double batterie convergente de 7 distributeurs avec canal d'eau, accumulation et tir
+  final déclenchables séparément.
+- 👷 **Aperçu des schémas revisité** : prévisualisation progressive bloc par bloc,
+  orientée selon la direction regardée.
+- ⛏️ **Pioche du bâtisseur** : pioche en netherite incassable verrouillée dans le slot 1.
+- 🧹 **Nettoyage automatique des arènes** : items au sol et orbes d'XP supprimés toutes
+  les 5 secondes en partie.
+
 ### v1.2.0
 
-- 🧨 **Schémas de canons à TNT** : bibliothèque de 6 schémas prêts à l'emploi (lance-TNT
-  basique, canon à retard, canon à rebond slime, canon à eau, canon semi-automatique,
-  canon double synchronisé), chacun avec un livre de plans expliquant la construction.
-- 📈 **Progression par niveaux** : système de points (kills, victoires, TNT envoyées,
-  blocs adverses détruits, canon fonctionnel) et paliers de niveaux déblocant les
-  schémas. Configurable dans `config.yml` (`points`, `levels.thresholds`).
-- 👁️ **Aperçu de schémas en blocs fantômes** : visualisation en jeu du schéma sélectionné
-  devant le joueur via `sendBlockChange` (côté client uniquement, le monde n'est pas
-  modifié), orienté selon la direction regardée, auto-expirant ou masquable avec
-  `/tnt schema hide`.
-- 🎯 **Suivi des TNT par équipe** : attribution des TNT amorcées à l'équipe de la zone
-  d'origine et récompense collective ; bonus « canon fonctionnel » à la première touche
-  adverse d'une partie.
-- 🖥️ Nouveau GUI **Schémas de canons** (`/tnt schema`) listant les schémas débloqués /
-  verrouillés (avec niveau requis).
-- 📝 Nouvelles commandes `/tnt schema` (et `/tnt schema hide`) et `/tnt level`.
-- 🐛 **Corrections de compilation** : import `TNTPrimeEvent` corrigé (`io.papermc.paper`
-  → `org.bukkit.event.block`) et `Attribute.MAX_HEALTH` → `GENERIC_MAX_HEALTH` (API
-  Paper 1.21).
-- 📝 Documentation enrichie (README) et description du plugin mise à jour.
-- 🏷️ Mise à jour du numéro de version (`1.1.0` → `1.2.0`) dans `pom.xml` et `plugin.yml`.
+- 🧨 **Schémas de canons à TNT** : bibliothèque de 6 schémas (lance-TNT basique, canon à
+  retard, canon à rebond slime, canon à eau, canon semi-automatique, canon double
+  synchronisé), chacun avec un livre de plans.
+- 📈 **Progression par niveaux** : système de points (kills, victoires, TNT, blocs
+  détruits, canon fonctionnel) déblocant les schémas.
+- 👁️ **Aperçu de schémas en blocs fantômes** : visualisation côté client via
+  `sendBlockChange`.
+- 🎯 **Suivi des TNT par équipe** avec récompense collective et bonus « canon
+  fonctionnel ».
+- 🖥️ Nouveau GUI **Schémas de canons** (`/tnt schema`).
 
 ### v1.1.0
 
 - 🐛 Correction de compilation : `Attribute.MAX_HEALTH` → `Attribute.GENERIC_MAX_HEALTH`.
 - ✅ Compilation vérifiée avec `mvn clean package` (JDK 21 + paper-api 1.21.1).
-- 📝 README retravaillé ; mise à jour de la version (`1.0.0` → `1.1.0`).
 
 ### v1.0.0
 

@@ -3,7 +3,7 @@ package com.tntwars.plugin;
 import com.tntwars.plugin.arena.ArenaManager;
 import com.tntwars.plugin.arena.ChestManager;
 import com.tntwars.plugin.cannon.CannonSchematicRegistry;
-import com.tntwars.plugin.cannon.SchematicPreviewManager;
+import com.tntwars.plugin.cannon.SchematicBuilder;
 import com.tntwars.plugin.commands.TntCommand;
 import com.tntwars.plugin.cosmetics.CosmeticManager;
 import com.tntwars.plugin.game.GameManager;
@@ -22,6 +22,7 @@ import com.tntwars.plugin.listeners.PlayerCombatListener;
 import com.tntwars.plugin.listeners.PlayerConnectionListener;
 import com.tntwars.plugin.listeners.PlayerDamageListener;
 import com.tntwars.plugin.listeners.PlayerFallListener;
+import com.tntwars.plugin.listeners.SpectatorContainmentListener;
 import com.tntwars.plugin.listeners.WaitingItemListener;
 import com.tntwars.plugin.progression.ProgressManager;
 import com.tntwars.plugin.scoreboard.ScoreboardManager;
@@ -42,7 +43,7 @@ public class TntWarsPlugin extends JavaPlugin {
     private LeaderboardHologramManager hologramManager;
     private ProgressManager progressManager;
     private CannonSchematicRegistry schematicRegistry;
-    private SchematicPreviewManager schematicPreviewManager;
+    private SchematicBuilder schematicBuilder;
     private CannonTrackerListener cannonTrackerListener;
 
     private ArenaListGUI arenaListGUI;
@@ -63,7 +64,7 @@ public class TntWarsPlugin extends JavaPlugin {
         this.scoreboardManager = new ScoreboardManager(this);
         this.progressManager = new ProgressManager(this);
         this.schematicRegistry = new CannonSchematicRegistry();
-        this.schematicPreviewManager = new SchematicPreviewManager(this);
+        this.schematicBuilder = new SchematicBuilder(this);
         this.gameManager = new GameManager(this);
         this.tournamentManager = new TournamentManager(this);
         this.hologramManager = new LeaderboardHologramManager(this);
@@ -79,6 +80,7 @@ public class TntWarsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ArenaProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new ChestRefillListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerFallListener(this), this);
+        getServer().getPluginManager().registerEvents(new SpectatorContainmentListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerCombatListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerDamageListener(this), this);
@@ -96,7 +98,7 @@ public class TntWarsPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (schematicPreviewManager != null) schematicPreviewManager.hideAll();
+        if (schematicBuilder != null) schematicBuilder.cancelAll();
         if (arenaManager != null) arenaManager.save();
         if (statsManager != null) statsManager.save();
         if (hologramManager != null) hologramManager.save();
@@ -159,8 +161,8 @@ public class TntWarsPlugin extends JavaPlugin {
         return schematicRegistry;
     }
 
-    public SchematicPreviewManager getSchematicPreviewManager() {
-        return schematicPreviewManager;
+    public SchematicBuilder getSchematicBuilder() {
+        return schematicBuilder;
     }
 
     public SchematicGUI getSchematicGUI() {

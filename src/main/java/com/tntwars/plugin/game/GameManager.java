@@ -372,6 +372,34 @@ public class GameManager {
         if (arena.getState() == ArenaState.RESTARTING) return;
         arena.setState(ArenaState.RESTARTING);
 
+        int postGameSeconds = plugin.getConfig().getInt("game.post-game-seconds", 5);
+        int totalTicks = Math.max(40, postGameSeconds * 20);
+        int fadeIn = 10;
+        int fadeOut = 20;
+        int stay = Math.max(10, totalTicks - fadeIn - fadeOut);
+
+        // Passage en spectateur forcé pour tout le monde (y compris les survivants encore en vie)
+        // + titre de victoire/défaite pour chaque équipe.
+        for (Team t : arena.getTeams()) {
+            boolean isWinnerTeam = winner != null && t == winner;
+            for (UUID uuid : t.getMembers()) {
+                Player p = plugin.getServer().getPlayer(uuid);
+                if (p == null) continue;
+                p.setGameMode(GameMode.SPECTATOR);
+                if (winner == null) {
+                    p.sendTitle(MessageUtil.color("§7Match nul"), MessageUtil.color("§7Aucun survivant"), fadeIn, stay, fadeOut);
+                } else if (isWinnerTeam) {
+                    p.sendTitle(MessageUtil.color("§6§lVICTOIRE"), MessageUtil.color("§eBravo à l'équipe " + t.getColoredName()), fadeIn, stay, fadeOut);
+                } else {
+                    p.sendTitle(MessageUtil.color("§c§lDÉFAITE"), MessageUtil.color("§7L'équipe " + winner.getColoredName() + " §7a gagné"), fadeIn, stay, fadeOut);
+                }
+            }
+        }
+        for (UUID uuid : arena.getSpectators()) {
+            Player p = plugin.getServer().getPlayer(uuid);
+            if (p != null) p.setGameMode(GameMode.SPECTATOR);
+        }
+
         if (winner != null) {
             broadcastArena(arena, "§6§l" + winner.getColoredName() + " §6§la gagné la partie !");
             int winPoints = plugin.getProgressManager().configuredPoints("win");
@@ -398,31 +426,69 @@ public class GameManager {
             plugin.getTournamentManager().onMatchFinished(arena, winner);
         }
 
-        // Copie (dédupliquée) des membres avant reset, nécessaire pour restaurer chacun une seule fois
-        java.util.Set<UUID> allMembers = new java.util.LinkedHashSet<>();
-        for (Team t : arena.getTeams()) allMembers.addAll(t.getMembers());
-        allMembers.addAll(arena.getSpectators());
+        broadcastArena(arena, "§7Vous restez spectateur sur place " + postGameSeconds + " secondes avant de retourner au lobby (/tnt leave automatique)...");
 
-        for (UUID uuid : allMembers) {
-            Player p = plugin.getServer().getPlayer(uuid);
-            currentArena.remove(uuid);
-            if (p != null) {
-                restorePlayer(p);
-                MessageUtil.send(p, "§7La partie est terminée, régénération de la map en cours...");
-            }
-        }
-
-        arena.resetRuntime();
-
+        // Renvoie tout le monde au lobby (comme /tnt leave) après le délai configuré, en laissant
+        // les joueurs spectateurs et contenus dans la zone entre-temps (voir SpectatorContainmentListener).
         new BukkitRunnable() {
             @Override
             public void run() {
-                arena.getSnapshot().restore(plugin, () -> {
-                    plugin.getChestManager().refillAll(arena);
-                    arena.setState(arena.isFullyConfigured() ? ArenaState.WAITING : ArenaState.DISABLED);
-                });
+                java.util.Set<UUID> remaining = new java.util.LinkedHashSet<>(arena.getPlayerTeamMap().keySet());
+                remaining.addAll(arena.getSpectators());
+                for (UUID uuid : remaining) {
+                    Player p = plugin.getServer().getPlayer(uuid);
+                    if (p != null) {
+                        leave(p);
+                        MessageUtil.send(p, "§aVous êtes de retour au lobby.");
+                    } else {
+                        arena.getPlayerTeamMap().remove(uuid);
+                        arena.getSpectators().remove(uuid);
+                        currentArena.remove(uuid);
+                    }
+                }
+                arena.resetRuntime();
             }
-        }.runTaskLater(plugin, plugin.getConfig().getInt("game.restarting-seconds", 8) * 20L);
+        }.runTaskLater(plugin, postGameSeconds * 20L);
+
+        // Régénération de la map, indépendante du délai ci-dessus.
+        int restartingSeconds = plugin.getConfig().getInt("game.restarting-seconds", 8);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                try {
+                    arena.getSnapshot().restore(plugin, () -> {
+                        try {
+                            plugin.getChestManager().refillAll(arena);
+                        } finally {
+                            arena.setState(arena.isFullyConfigured() ? ArenaState.WAITING : ArenaState.DISABLED);
+                        }
+                    });
+                } catch (Exception ex) {
+                    plugin.getLogger().warning("Erreur pendant la régénération de l'arène " + arena.getName() + " : " + ex.getMessage());
+                    arena.setState(arena.isFullyConfigured() ? ArenaState.WAITING : ArenaState.DISABLED);
+                }
+            }
+        }.runTaskLater(plugin, restartingSeconds * 20L);
+
+        // Filet de sécurité : si l'arène reste bloquée en régénération anormalement longtemps
+        // (erreur silencieuse, monde déchargé...), on la débloque quand même pour ne jamais la
+        // laisser injoignable indéfiniment. Peut aussi être déclenché manuellement via /tnt debug.
+        long watchdogTicks = (restartingSeconds + 60L) * 20L;
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (arena.getState() == ArenaState.RESTARTING) {
+                    plugin.getLogger().warning("Arène " + arena.getName() + " bloquée en régénération depuis trop longtemps, déblocage automatique.");
+                    arena.setState(arena.isFullyConfigured() ? ArenaState.WAITING : ArenaState.DISABLED);
+                }
+            }
+        }.runTaskLater(plugin, watchdogTicks);
+    }
+
+    /** Débloque manuellement une arène bloquée (utilisé par /tnt debug &lt;arène&gt; fix). */
+    public void forceUnstuck(Arena arena) {
+        arena.resetRuntime();
+        arena.setState(arena.isFullyConfigured() ? ArenaState.WAITING : ArenaState.DISABLED);
     }
 
     public void broadcastArena(Arena arena, String message) {

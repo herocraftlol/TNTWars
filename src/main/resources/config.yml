@@ -4,6 +4,7 @@ game:
   countdown-seconds: 30
   min-players-to-start: 2
   restarting-seconds: 8
+  post-game-seconds: 5
   default-teams: 2
   default-team-size: 4
   friendly-fire: false

@@ -16,8 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * GUI listant tous les schémas de canons à TNT : débloqués (cliquables pour lancer
- * l'aperçu en blocs fantômes) ou verrouillés (affiche le niveau requis).
+ * GUI listant tous les schémas de canons à TNT : débloqués (cliquables pour lancer la
+ * construction réelle, bloc par bloc, dans sa propre zone) ou verrouillés (affiche le
+ * niveau requis).
  */
 public class SchematicGUI {
 
@@ -52,8 +53,8 @@ public class SchematicGUI {
         lore.add(ChatColor.GRAY + "Niveau requis : " + ChatColor.WHITE + schema.getRequiredLevel());
         if (unlocked) {
             lore.add("");
-            lore.add(ChatColor.GREEN + "▶ Cliquez pour prévisualiser");
-            lore.add(ChatColor.GRAY + "(blocs fantômes, visibles par vous seul)");
+            lore.add(ChatColor.GREEN + "▶ Cliquez pour construire (en jeu, dans votre zone)");
+            lore.add(ChatColor.GRAY + "Blocs réels posés petit à petit devant vous.");
         } else {
             lore.add("");
             lore.add(ChatColor.RED + "🔒 Verrouillé");

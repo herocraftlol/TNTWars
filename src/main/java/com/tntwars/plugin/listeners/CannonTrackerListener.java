@@ -4,8 +4,10 @@ import com.tntwars.plugin.TntWarsPlugin;
 import com.tntwars.plugin.arena.Arena;
 import com.tntwars.plugin.arena.ArenaState;
 import com.tntwars.plugin.arena.Team;
-import org.bukkit.event.block.TNTPrimeEvent;
+import com.destroystokyo.paper.event.block.TNTPrimeEvent;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.TNTPrimed;
@@ -50,20 +52,71 @@ public class CannonTrackerListener implements Listener {
         return null;
     }
 
+    private Team zoneAt(Arena arena, Location loc) {
+        for (Team t : arena.getTeams()) {
+            if (t.getZone() != null && t.getZone().contains(loc)) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Détermine l'équipe propriétaire d'une TNT amorcée. {@link TNTPrimeEvent#getBlock()}
+     * renvoie parfois la case où la TNT apparaît (la sortie du distributeur), qui peut se
+     * trouver à la toute limite — voire juste en dehors — de la zone de l'équipe si le
+     * canon vise vers l'extérieur. On élargit donc la recherche : d'abord la case exacte,
+     * puis, si besoin, on cherche un distributeur à proximité (qui, lui, est forcément
+     * placé dans la zone du propriétaire grâce à la protection de construction) et on
+     * utilise sa position ; en dernier recours on élargit la recherche de zone autour du
+     * point d'amorçage.
+     */
+    private Team resolveOwner(Arena arena, Location primeLoc) {
+        Team direct = zoneAt(arena, primeLoc);
+        if (direct != null) return direct;
+
+        World world = primeLoc.getWorld();
+        if (world != null) {
+            int radius = 3;
+            Block origin = primeLoc.getBlock();
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dy = -radius; dy <= radius; dy++) {
+                    for (int dz = -radius; dz <= radius; dz++) {
+                        Block b = origin.getRelative(dx, dy, dz);
+                        if (b.getType() == Material.DISPENSER) {
+                            Team t = zoneAt(arena, b.getLocation());
+                            if (t != null) return t;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Dernier recours : la zone la plus proche du point d'amorçage (utile si le distributeur
+        // n'a pas pu être retrouvé, par ex. déjà détruit entre-temps).
+        Team closest = null;
+        double bestDist = Double.MAX_VALUE;
+        for (Team t : arena.getTeams()) {
+            if (t.getZone() == null) continue;
+            Location center = t.getZone().getCenter();
+            if (center.getWorld() == null || primeLoc.getWorld() == null || !center.getWorld().equals(primeLoc.getWorld())) continue;
+            double dist = center.distanceSquared(primeLoc);
+            if (dist < bestDist) {
+                bestDist = dist;
+                closest = t;
+            }
+        }
+        return closest;
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onPrime(TNTPrimeEvent event) {
         Block block = event.getBlock();
         Arena arena = findArenaAt(block.getLocation());
         if (arena == null || arena.getState() != ArenaState.INGAME) return;
 
-        Team owner = null;
-        for (Team t : arena.getTeams()) {
-            if (t.getZone() != null && t.getZone().contains(block.getLocation())) {
-                owner = t;
-                break;
-            }
-        }
-        if (owner == null) return; // TNT amorcée en zone neutre : pas attribuée
+        Team owner = resolveOwner(arena, block.getLocation());
+        if (owner == null) return; // aucune zone d'équipe définie sur cette arène : pas attribuée
 
         Team finalOwner = owner;
         Arena finalArena = arena;
@@ -74,7 +127,7 @@ public class CannonTrackerListener implements Listener {
         Location loc = block.getLocation();
         plugin.getServer().getScheduler().runTask(plugin, () -> {
             if (loc.getWorld() == null) return;
-            for (Entity e : loc.getWorld().getNearbyEntities(loc, 1.5, 1.5, 1.5)) {
+            for (Entity e : loc.getWorld().getNearbyEntities(loc, 2.5, 2.5, 2.5)) {
                 if (e instanceof TNTPrimed && !tracked.containsKey(e.getUniqueId())) {
                     tracked.put(e.getUniqueId(), new Origin(finalArena.getName(), finalOwner.getIndex()));
                     break;

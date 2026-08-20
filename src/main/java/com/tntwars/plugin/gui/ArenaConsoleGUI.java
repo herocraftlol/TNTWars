@@ -30,8 +30,10 @@ public class ArenaConsoleGUI {
     public static final int SLOT_STOP = 12;
     public static final int SLOT_REGEN = 14;
     public static final int SLOT_KICK_ALL = 16;
-    public static final int SLOT_DELETE = 31;
+    public static final int SLOT_DELETE = 22;
+    public static final int SLOT_UNSTUCK = 24;
     public static final int PLAYERS_START = 27;
+    public static final int PLAYERS_END = 44; // inclus
 
     private final TntWarsPlugin plugin;
 
@@ -66,9 +68,14 @@ public class ArenaConsoleGUI {
         inv.setItem(SLOT_DELETE, named(Material.TNT, ChatColor.DARK_RED + "" + ChatColor.BOLD + "Supprimer l'arène",
                 List.of(ChatColor.GRAY + "Supprime définitivement cette arène.", ChatColor.RED + "Cliquez à nouveau pour confirmer.")));
 
+        inv.setItem(SLOT_UNSTUCK, named(Material.CLOCK, ChatColor.GOLD + "" + ChatColor.BOLD + "Débloquer l'arène",
+                List.of(ChatColor.GRAY + "Force le retour à l'état 'en attente'",
+                        ChatColor.GRAY + "si l'arène reste coincée en régénération.",
+                        ChatColor.GRAY + "Équivalent à /tnt debug " + arena.getName() + " fix")));
+
         int slot = PLAYERS_START;
         for (UUID uuid : arena.getPlayerTeamMap().keySet()) {
-            if (slot >= 45) break;
+            if (slot > PLAYERS_END) break;
             Player p = Bukkit.getPlayer(uuid);
             if (p == null) continue;
             ItemStack skull = new ItemStack(Material.PLAYER_HEAD);

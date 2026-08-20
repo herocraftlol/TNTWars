@@ -79,6 +79,10 @@ public class GuiListener implements Listener {
         } else if (slot == ArenaConsoleGUI.SLOT_REGEN) {
             plugin.getArenaManager().captureSnapshot(arena);
             MessageUtil.send(admin, "§aSnapshot repris pour " + arena.getName() + ".");
+        } else if (slot == ArenaConsoleGUI.SLOT_UNSTUCK) {
+            plugin.getGameManager().forceUnstuck(arena);
+            MessageUtil.send(admin, "§aArène " + arena.getName() + " débloquée, état forcé à " + arena.getState() + ".");
+            plugin.getArenaConsoleGUI().open(admin, arena);
         } else if (slot == ArenaConsoleGUI.SLOT_KICK_ALL) {
             for (var uuid : new java.util.ArrayList<>(arena.getPlayerTeamMap().keySet())) {
                 Player p = Bukkit.getPlayer(uuid);
@@ -133,6 +137,6 @@ public class GuiListener implements Listener {
             return;
         }
         player.closeInventory();
-        plugin.getSchematicPreviewManager().show(player, schema);
+        plugin.getSchematicBuilder().build(player, schema);
     }
 }

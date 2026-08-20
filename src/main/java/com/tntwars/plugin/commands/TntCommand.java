@@ -67,6 +67,7 @@ public class TntCommand implements CommandExecutor, TabCompleter {
             case "setteams" -> handleSetTeams(sender, args);
             case "setteamsize" -> handleSetTeamSize(sender, args);
             case "console" -> handleConsole(sender, args);
+            case "debug" -> handleDebug(sender, args);
             case "forcestart" -> handleForceStart(sender, args);
             case "stop" -> handleStop(sender, args);
             case "info" -> handleInfo(sender, args);
@@ -110,9 +111,8 @@ public class TntCommand implements CommandExecutor, TabCompleter {
 
     private void handleSchema(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) return;
-        if (args.length >= 2 && args[1].equalsIgnoreCase("hide")) {
-            plugin.getSchematicPreviewManager().hide(player);
-            MessageUtil.send(player, "§7Aperçu masqué.");
+        if (args.length >= 2 && (args[1].equalsIgnoreCase("hide") || args[1].equalsIgnoreCase("cancel"))) {
+            plugin.getSchematicBuilder().cancel(player);
             return;
         }
         plugin.getSchematicGUI().open(player);
@@ -329,6 +329,43 @@ public class TntCommand implements CommandExecutor, TabCompleter {
         plugin.getArenaConsoleGUI().open(player, arena);
     }
 
+    private void handleDebug(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return;
+        Arena arena = requireArena(sender, args, 1);
+        if (arena == null) return;
+
+        if (args.length >= 3 && (args[2].equalsIgnoreCase("fix") || args[2].equalsIgnoreCase("unstuck"))) {
+            plugin.getGameManager().forceUnstuck(arena);
+            MessageUtil.send(sender, "§aArène §f" + arena.getName() + " §adébloquée : état forcé à §f"
+                    + arena.getState() + "§a, joueurs/équipes réinitialisés.");
+            return;
+        }
+
+        MessageUtil.send(sender, "§6§l== Debug arène " + arena.getName() + " ==");
+        MessageUtil.sendRaw(sender, " §8- État: §f" + arena.getState());
+        MessageUtil.sendRaw(sender, " §8- Configurée: §f" + arena.isFullyConfigured());
+        MessageUtil.sendRaw(sender, " §8- Map définie: §f" + (arena.getMapRegion() != null));
+        if (arena.getMapRegion() != null) {
+            MessageUtil.sendRaw(sender, "   §7min(" + arena.getMapRegion().getMinX() + "," + arena.getMapRegion().getMinY() + "," + arena.getMapRegion().getMinZ()
+                    + ") max(" + arena.getMapRegion().getMaxX() + "," + arena.getMapRegion().getMaxY() + "," + arena.getMapRegion().getMaxZ() + ")"
+                    + " monde=" + arena.getMapRegion().getWorldName());
+        }
+        MessageUtil.sendRaw(sender, " §8- Snapshot capturé: §f" + (arena.getSnapshot() != null && arena.getSnapshot().isCaptured()));
+        MessageUtil.sendRaw(sender, " §8- Zone de coffre définie: §f" + (arena.getChestRegion() != null) + " §7(" + arena.getChests().size() + " coffre(s) enregistré(s))");
+        MessageUtil.sendRaw(sender, " §8- Salle d'attente: §f" + (arena.getWaitingSpawn() != null));
+        MessageUtil.sendRaw(sender, " §8- Équipes: §f" + arena.getTeamsCount() + " x " + arena.getTeamSize());
+        for (var team : arena.getTeams()) {
+            MessageUtil.sendRaw(sender, "   §7Équipe " + team.getIndex() + ": zone=" + (team.getZone() != null) + ", spawn=" + (team.getSpawn() != null)
+                    + ", membres=" + team.getMembers().size() + ", vivants=" + team.getAlive().size());
+        }
+        MessageUtil.sendRaw(sender, " §8- Joueurs trackés: §f" + arena.totalPlayers() + " §8- Spectateurs: §f" + arena.getSpectators().size());
+        MessageUtil.sendRaw(sender, " §8- Countdown: §f" + arena.getCountdown() + " §8- Tournoi lié: §f" + arena.getTournamentName());
+        if (arena.getState() == ArenaState.RESTARTING) {
+            MessageUtil.sendRaw(sender, "§eCette arène est en régénération et n'est pas rejoignable tant que l'état ne repasse pas à WAITING.");
+            MessageUtil.sendRaw(sender, "§eSi elle semble bloquée, utilisez §f/tnt debug " + arena.getName() + " fix §epour la débloquer immédiatement.");
+        }
+    }
+
     private void handleForceStart(CommandSender sender, String[] args) {
         if (!checkAdmin(sender)) return;
         Arena arena = requireArena(sender, args, 1);
@@ -466,6 +503,7 @@ public class TntCommand implements CommandExecutor, TabCompleter {
             MessageUtil.sendRaw(sender, "§c/tnt setwaiting <arène>");
             MessageUtil.sendRaw(sender, "§c/tnt setteams|setteamsize <arène> <valeur>");
             MessageUtil.sendRaw(sender, "§c/tnt console <arène>");
+            MessageUtil.sendRaw(sender, "§c/tnt debug <arène> [fix] §7- diagnostic / déblocage d'une arène coincée");
             MessageUtil.sendRaw(sender, "§c/tnt forcestart|stop <arène>");
             MessageUtil.sendRaw(sender, "§c/tnt hologram create|remove <id>");
         }
@@ -477,16 +515,19 @@ public class TntCommand implements CommandExecutor, TabCompleter {
         if (sender.hasPermission("tntwars.admin")) {
             subs.addAll(List.of("create", "delete", "setpos1", "setpos2", "setchestpos1", "setchestpos2",
                     "setzone1", "setzone2", "setspawn", "setwaiting", "setteams", "setteamsize",
-                    "console", "forcestart", "stop", "hologram"));
+                    "console", "debug", "forcestart", "stop", "hologram"));
         }
         if (args.length == 1) {
             return subs.stream().filter(s -> s.startsWith(args[0].toLowerCase())).collect(Collectors.toList());
         }
         if (args.length == 2 && List.of("join", "delete", "setpos1", "setpos2", "setchestpos1", "setchestpos2",
                 "setzone1", "setzone2", "setspawn", "setwaiting", "setteams", "setteamsize",
-                "console", "forcestart", "stop", "info").contains(args[0].toLowerCase())) {
+                "console", "debug", "forcestart", "stop", "info").contains(args[0].toLowerCase())) {
             return plugin.getArenaManager().getArenas().stream().map(Arena::getName)
                     .filter(n -> n.toLowerCase().startsWith(args[1].toLowerCase())).collect(Collectors.toList());
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("debug")) {
+            return List.of("fix").stream().filter(s -> s.startsWith(args[2].toLowerCase())).collect(Collectors.toList());
         }
         return List.of();
     }
